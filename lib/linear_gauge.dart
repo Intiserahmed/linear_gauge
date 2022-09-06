@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:linear_gauge/utils.dart';
+import 'dart:core';
 
 // ignore: must_be_immutable
 class LinearGauge extends StatefulWidget {
   ///fraction value
-  late final double fraction;
+  late final double currentValue;
 
   // Width of the linear_gauge
   final double? width;
 
   // Max number to reach
-  final double max;
+  final double maxValue;
+
+  // Minimum number to start
+  final double minValue;
+
+  // The number of division that gauge will be divided into
+  final int divisions;
+
+  //The number if subdivision that gauge will be divided into
+  final int subDivisions;
 
   ///Height of the line
   final double gaugeHeight;
@@ -62,7 +73,7 @@ class LinearGauge extends StatefulWidget {
   LinearGauge({
     Key? key,
     this.barColor = Colors.transparent,
-    this.fraction = 0.0,
+    this.currentValue = 0.0,
     this.gaugeHeight = 5.0,
     this.width,
     Color? backgroundColor,
@@ -78,12 +89,16 @@ class LinearGauge extends StatefulWidget {
     this.restartAnimation = false,
     this.onAnimationEnd,
     this.widgetIndicator,
-    this.max = 100.0,
+    this.maxValue = 100.0,
+    this.minValue = 0.0,
+    required this.divisions,
+    required this.subDivisions,
   }) : super(key: key) {
     _progressColor = progressColor ?? Colors.deepOrangeAccent;
     _backgroundColor = backgroundColor ?? const Color(0xFFB8C7CB);
-
-
+    if (currentValue < minValue || currentValue > maxValue) {
+      throw Exception("Current Value limit Exceeded");
+    }
   }
 
   @override
@@ -103,35 +118,101 @@ class _LinearGaugeState extends State<LinearGauge>
   double _indicatorWidth = 0.0;
   double _indicatorHeight = 0.0;
 
-  List<Widget> _children = List.empty(growable: true);
+  final double subDivisionThickness = 1;
+  final Color primaryColor = const Color(0xFFE9E9E9);
+  final Color secondaryColor = const Color(0xFFBCC5C8);
 
-//big scale 5 small 5
-  void _generateScale() async {
-    var tickSpacing;
-    if (mounted) {
-      print(_wholeContainerWidth);
-      tickSpacing = _wholeContainerWidth / widget.max;
-      print("tick $tickSpacing");
-    }
+  final double value = 4672;
 
-    for (int i = 0; i < 40; ++i) {
-      _children.add(Container(
-        margin: EdgeInsets.all(await tickSpacing),
-        color: Colors.black,
-        width: 1.5,
-        height: 25,
-      ));
-
-      for (int j = 1; j <= 4; ++j) {
-        _children.add(Container(
-          margin: EdgeInsets.all(await tickSpacing),
-          color: Colors.black,
-          width: 1.5,
-          height: 12.5,
-        ));
-      }
-    }
+  Widget parentWidgetBasedOnOrientation() {
+    return SizedBox(
+      width: _wholeContainerWidth,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _parentWidgetsChildren(),
+      ),
+    );
   }
+
+  List<Widget> _parentWidgetsChildren() {
+    /// used to display the actual value of at an index
+    final double multiplier =
+        (widget.maxValue) / (widget.divisions * widget.subDivisions);
+    print('multiplier $multiplier');
+    final double valueWidth =
+        (_wholeContainerWidth / (widget.maxValue) * value);
+    print('valueWidth $valueWidth');
+
+    /// number of lines that fall behind the value * thickness of one subDivision
+    final double valueWidthAdditionalThickness = ((value /
+                (widget.maxValue / (widget.divisions * widget.subDivisions))) -
+            1) *
+        subDivisionThickness;
+
+    return [
+      const SizedBox(
+        height: 2,
+      ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _childWidgetsChildren(multiplier),
+      )
+    ];
+  }
+
+  List<Widget> _childWidgetsChildren(double multiplier) {
+    return List.generate(widget.divisions * widget.subDivisions, (index) {
+      /// only for last index
+      if (index == ((widget.divisions * widget.subDivisions) - 1)) {
+        return majorSubDivision(((index + 1) * multiplier).ceil());
+      }
+
+      if (index % widget.subDivisions == 0) {
+        /// if 0 (1st index) then send 0
+        return majorSubDivision(
+            index == 0 ? widget.minValue.toInt() : (index * multiplier).ceil());
+      }
+
+      return minorSubDivision();
+    });
+  }
+
+  Widget majorSubDivision(int index) {
+    /// used Stack as we don't want the numbers to take size in the Row division
+    ///
+    print(index);
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          height: 10,
+          width: subDivisionThickness,
+          decoration: BoxDecoration(
+            color: secondaryColor,
+          ),
+        ),
+        Positioned(
+            bottom: 22, // 10(height) + 5(space)
+            left: -7, // random value that looks correct
+            child: Text('${index}')),
+      ],
+    );
+  }
+
+  Widget minorSubDivision() {
+    return Container(
+      height: 6,
+      width: subDivisionThickness,
+      decoration: BoxDecoration(
+        color: primaryColor,
+      ),
+    );
+  }
+
+  final orientation = GaugeOrientation.horizontal;
 
   @override
   void dispose() {
@@ -153,7 +234,6 @@ class _LinearGaugeState extends State<LinearGauge>
             _indicatorHeight =
                 _indicatorKey.currentContext?.size?.height ?? 0.0;
           }
-          _generateScale();
         });
       }
     });
@@ -161,14 +241,17 @@ class _LinearGaugeState extends State<LinearGauge>
       _animationController = AnimationController(
           vsync: this,
           duration: Duration(milliseconds: widget.animationDuration));
-      _animation = Tween(begin: 0.0, end: widget.fraction).animate(
+      _animation = Tween(begin: widget.minValue, end: widget.currentValue)
+          .animate(
         CurvedAnimation(parent: _animationController!, curve: widget.curve),
       )..addListener(() {
           setState(() {
-            _fraction = _animation!.value / widget.max;
+            _fraction =
+                ((_animation!.value + widget.minValue.abs()) / widget.maxValue);
           });
           if (widget.restartAnimation && _fraction == 1.0) {
-            _animationController!.repeat(min: 0.0, max: widget.max);
+            _animationController!
+                .repeat(min: widget.minValue, max: widget.maxValue);
           }
         });
       _animationController!.addStatusListener((status) {
@@ -195,15 +278,16 @@ class _LinearGaugeState extends State<LinearGauge>
   @override
   void didUpdateWidget(LinearGauge oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.fraction != widget.fraction) {
+    if (oldWidget.currentValue != widget.currentValue) {
       if (_animationController != null) {
         _animationController!.duration =
             Duration(milliseconds: widget.animationDuration);
         _animation =
-            Tween(begin: oldWidget.fraction, end: widget.fraction).animate(
+            Tween(begin: oldWidget.currentValue, end: widget.currentValue)
+                .animate(
           CurvedAnimation(parent: _animationController!, curve: widget.curve),
         );
-        _animationController!.forward(from: 0);
+        _animationController!.forward(from: widget.minValue);
       } else {
         _updateProgress();
       }
@@ -213,7 +297,8 @@ class _LinearGaugeState extends State<LinearGauge>
 
   _updateProgress() {
     setState(() {
-      _fraction = widget.fraction / widget.max;
+      _fraction =
+          (widget.currentValue - widget.minValue.abs()) / widget.maxValue;
     });
   }
 
@@ -224,6 +309,7 @@ class _LinearGaugeState extends State<LinearGauge>
     final hasSetWidth = widget.width != null;
     final percentPositionedHorizontal =
         _wholeContainerWidth * _fraction - _indicatorWidth / 1.9;
+
     var containerWidget = Container(
       width: hasSetWidth ? widget.width : double.infinity,
       height: widget.gaugeHeight,
@@ -262,7 +348,7 @@ class _LinearGaugeState extends State<LinearGauge>
             Positioned(
               bottom: _wholeContainerHeight,
               child: SizedBox(
-                child: Row(children: _children),
+                child: parentWidgetBasedOnOrientation(),
               ),
             ),
         ],
@@ -279,14 +365,28 @@ class _LinearGaugeState extends State<LinearGauge>
 
     return Material(
       color: Colors.transparent,
-      child: Container(
-        color: widget.barColor,
-        child: Row(
-          mainAxisAlignment: widget.alignment,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: items,
-        ),
-      ),
+      child: orientation == GaugeOrientation.vertical
+          ? RotatedBox(
+              quarterTurns: 1,
+              child: Expanded(
+                child: Container(
+                  color: widget.barColor,
+                  child: Row(
+                    mainAxisAlignment: widget.alignment,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: items,
+                  ),
+                ),
+              ),
+            )
+          : Container(
+              color: widget.barColor,
+              child: Row(
+                mainAxisAlignment: widget.alignment,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: items,
+              ),
+            ),
     );
   }
 
@@ -326,7 +426,7 @@ class _LinearPainter extends CustomPainter {
     final progressLine = size.width * progress;
     Path linePath = Path();
     print(size.width);
-    print(progressLine);
+    print(progressLine); // if progress line cross this then color changes logic
 
     linePath.addRRect(RRect.fromRectAndRadius(
         Rect.fromLTWH(0, 0, progressLine, size.height), barRadius));

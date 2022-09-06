@@ -48,23 +48,27 @@ class LinearGuagePage extends StatefulWidget {
 
 class _LinearGuagePageState extends State<LinearGuagePage> {
   bool isRunning = true;
-  var value = 324.0;
-  var endValue = 735.0;
+  var value = -35.5;
+  var endValue = 800.0;
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(15.0),
+        padding: const EdgeInsets.all(15.0),
         child: LinearGauge(
-          barRadius: Radius.circular(10),
+          barRadius: const Radius.circular(6),
           width: MediaQuery.of(context).size.width - 50,
           animation: isRunning,
-          gaugeHeight: 20.0,
-          animationDuration: 1500,
-          max: endValue,
-          fraction: value,
+          gaugeHeight: 40.0,
+          progressColor: Colors.orange,
+          animationDuration: 900,
+          minValue: -40.0,
+          maxValue: endValue,
+          currentValue: value,
           gaugeStatus: Text("$value"),
-          widgetIndicator: Icon(Icons.arrow_drop_down, size: 40),
+          widgetIndicator: const Icon(Icons.arrow_drop_down, size: 40),
+          divisions: 5,
+          subDivisions: 3,
         ),
       ),
     );
