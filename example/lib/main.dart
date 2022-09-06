@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:linear_gauge/linear_gauge.dart';
+import 'package:linear_gauge/utils.dart';
 
 void main() {
   runApp(const MyApp());
@@ -43,6 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class LinearGuagePage extends StatefulWidget {
   @override
+  // ignore: library_private_types_in_public_api
   _LinearGuagePageState createState() => _LinearGuagePageState();
 }
 
@@ -56,6 +60,7 @@ class _LinearGuagePageState extends State<LinearGuagePage> {
       child: Padding(
         padding: const EdgeInsets.all(15.0),
         child: LinearGauge(
+          orientation: GaugeOrientation.vertical,
           barRadius: const Radius.circular(6),
           width: MediaQuery.of(context).size.width - 50,
           animation: isRunning,
@@ -68,7 +73,7 @@ class _LinearGuagePageState extends State<LinearGuagePage> {
           gaugeStatus: Text("$value"),
           widgetIndicator: const Icon(Icons.arrow_drop_down, size: 40),
           divisions: 5,
-          subDivisions: 3,
+          subDivisions: 4,
         ),
       ),
     );

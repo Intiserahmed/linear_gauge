@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linear_gauge/utils.dart';
-import 'dart:core';
+import 'dart:math' as math;
 
 // ignore: must_be_immutable
 class LinearGauge extends StatefulWidget {
@@ -9,6 +9,9 @@ class LinearGauge extends StatefulWidget {
 
   // Width of the linear_gauge
   final double? width;
+
+  //Controls the orientation of the gauge
+  late final GaugeOrientation orientation;
 
   // Max number to reach
   final double maxValue;
@@ -89,6 +92,7 @@ class LinearGauge extends StatefulWidget {
     this.restartAnimation = false,
     this.onAnimationEnd,
     this.widgetIndicator,
+    required this.orientation,
     this.maxValue = 100.0,
     this.minValue = 0.0,
     required this.divisions,
@@ -139,10 +143,8 @@ class _LinearGaugeState extends State<LinearGauge>
     /// used to display the actual value of at an index
     final double multiplier =
         (widget.maxValue) / (widget.divisions * widget.subDivisions);
-    print('multiplier $multiplier');
     final double valueWidth =
         (_wholeContainerWidth / (widget.maxValue) * value);
-    print('valueWidth $valueWidth');
 
     /// number of lines that fall behind the value * thickness of one subDivision
     final double valueWidthAdditionalThickness = ((value /
@@ -181,8 +183,6 @@ class _LinearGaugeState extends State<LinearGauge>
 
   Widget majorSubDivision(int index) {
     /// used Stack as we don't want the numbers to take size in the Row division
-    ///
-    print(index);
 
     return Stack(
       clipBehavior: Clip.none,
@@ -211,8 +211,6 @@ class _LinearGaugeState extends State<LinearGauge>
       ),
     );
   }
-
-  final orientation = GaugeOrientation.horizontal;
 
   @override
   void dispose() {
@@ -364,30 +362,27 @@ class _LinearGaugeState extends State<LinearGauge>
     }
 
     return Material(
-      color: Colors.transparent,
-      child: orientation == GaugeOrientation.vertical
-          ? RotatedBox(
-              quarterTurns: 1,
-              child: Expanded(
+        color: Colors.transparent,
+        child: widget.orientation == GaugeOrientation.vertical
+            ? RotatedBox(
+                quarterTurns: 1,
                 child: Container(
                   color: widget.barColor,
                   child: Row(
-                    mainAxisAlignment: widget.alignment,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: items,
                   ),
                 ),
-              ),
-            )
-          : Container(
-              color: widget.barColor,
-              child: Row(
-                mainAxisAlignment: widget.alignment,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: items,
-              ),
-            ),
-    );
+              )
+            : Container(
+                color: widget.barColor,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: items,
+                ),
+              ));
   }
 
   @override
@@ -425,8 +420,6 @@ class _LinearPainter extends CustomPainter {
 
     final progressLine = size.width * progress;
     Path linePath = Path();
-    print(size.width);
-    print(progressLine); // if progress line cross this then color changes logic
 
     linePath.addRRect(RRect.fromRectAndRadius(
         Rect.fromLTWH(0, 0, progressLine, size.height), barRadius));
