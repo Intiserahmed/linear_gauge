@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:linear_gauge/utils.dart';
-import 'dart:math' as math;
 
 // ignore: must_be_immutable
 class LinearGauge extends StatefulWidget {

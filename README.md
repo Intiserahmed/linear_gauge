@@ -1,39 +1,20 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+<img width=250px src="https://atsign.dev/assets/img/atPlatform_logo_gray.svg?sanitize=true">
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages). 
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages). 
--->
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+## Overview
 
-## Features
+This at_linearGauge package provides time-based representation of measuring tools on a linear scale with animations.
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
 
-## Getting started
+We call giving people control of access to their data “flipping the internet”
+and you can learn more about how it works by reading this
+[overview](https://atsign.dev/docs/overview/).
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
 
-## Usage
+## Open source usage and contributions
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
-
-```dart
-const like = 'sample';
-```
-
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+This is open source code, so feel free to use it as is, suggest changes
+or enhancements or create your own version. See
+[Contribution Guideline](https://github.com/atsign-foundation/at_widgets/blob/trunk/CONTRIBUTING.md)
+for detailed guidance on how to setup tools, tests and make a pull request.
